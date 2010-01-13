@@ -1,6 +1,6 @@
 <?php
 /** 
- * feed_aggregator.php
+ * Feed Aggregator Component
  *
  * A CakePHP Component that will take a list of feeds and aggregate them into a single array based on their timestamp.
  * Works with RSS, RDF and Atom types as well as built in support for cacheing and limitation.
@@ -8,8 +8,6 @@
  * @author 		Miles Johnson - www.milesj.me
  * @copyright	Copyright 2006-2009, Miles Johnson, Inc.
  * @license 	http://www.opensource.org/licenses/mit-license.php - Licensed under The MIT License
- * @package		Feed Aggregator Component
- * @version 	1.4
  * @link		www.milesj.me/resources/script/feed-aggregator-component
  */
 
@@ -18,55 +16,73 @@ App::import('Core', array('HttpSocket', 'Xml'));
 class FeedAggregatorComponent extends Object {
 
 	/**
-	 * Current version: www.milesj.me/files/logs/feed-aggregator-component
+	 * Current version: www.milesj.me/resources/logs/feed-aggregator-component
+	 *
+	 * @access public
 	 * @var string
 	 */ 
 	public $version = '1.4';   
 	
 	/**
-	 * How many items to return
+	 * How many items to return.
+	 *
+	 * @access public
 	 * @var int
 	 */
 	public $returnItemCount = 20;
 	
 	/**
 	 * Should we grab the item description?
+	 *
+	 * @access public
 	 * @var boolean
 	 */
 	public $grabDescription = false;
 	
 	/**
 	 * Are there extra elements to grab from the feed?
+	 *
+	 * @access public
 	 * @var array
 	 */
 	public $grabElements = array();
 	
 	/**
 	 * Should we cache the final aggregated output?
+	 *
+	 * @access public
 	 * @var boolean
 	 */
 	public $cache = false;
 	
 	/**
 	 * When should the cache expire?
+	 *
+	 * @access public
 	 * @var string
 	 */
 	public $expires = '+1 hour'; 
 
 	/**
-	 * List of feed URLs to be parsed
+	 * List of feed URLs to be parsed.
+	 *
+	 * @access protected
 	 * @var array
 	 */
 	protected $_feeds = array();
 	
 	/**
-	 * The parsed feeds in array format
+	 * The parsed feeds in array format.
+	 *
+	 * @access protected
 	 * @var array
 	 */
 	protected $_parsed = array();
 	
 	/**
-	 * Types of feeds and unique element names
+	 * Types of feeds and unique element names.
+	 *
+	 * @access protected
 	 * @var array
 	 */
 	private $__typeMap = array(
@@ -88,7 +104,8 @@ class FeedAggregatorComponent extends Object {
 	);
 	
 	/**
-	 * Load classes 
+	 * Load classes.
+	 *
 	 * @access public
 	 * @uses HttpSocket
 	 * @return void
@@ -108,7 +125,8 @@ class FeedAggregatorComponent extends Object {
 	}
 	
 	/**
-	 * Adds a feed to the list of feeds to be aggregated
+	 * Adds a feed to the list of feeds to be aggregated.
+	 *
 	 * @access public
 	 * @param string $group
 	 * @param array $feeds
@@ -129,7 +147,8 @@ class FeedAggregatorComponent extends Object {
 	}
 	
 	/**
-	 * Grab all the feeds and combine them; truncate if necessary
+	 * Grab all the feeds and combine them; truncate if necessary.
+	 *
 	 * @access public
 	 * @uses XML
 	 * @param string $group
@@ -194,7 +213,8 @@ class FeedAggregatorComponent extends Object {
 	}
 	
 	/**
-	 * Get a certain value from a variable
+	 * Get a certain value from a variable.
+	 *
 	 * @access protected
 	 * @param string $item
 	 * @param array $slugs
@@ -215,7 +235,8 @@ class FeedAggregatorComponent extends Object {
 	}
 	
 	/**
-	 * Parses the feed and rebuilds an array based on the feeds type (RSS, RDF, Atom)
+	 * Parses the feed and rebuilds an array based on the feeds type (RSS, RDF, Atom).
+	 *
 	 * @access protected
 	 * @param string $type
 	 * @param array $feed
@@ -289,7 +310,8 @@ class FeedAggregatorComponent extends Object {
 	}
 	
 	/**
-	 * Truncates the feed to a certain amount
+	 * Truncates the feed to a certain amount.
+	 * 
 	 * @access protected
 	 * @param array $feed
 	 * @param int $count
