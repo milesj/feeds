@@ -20,6 +20,10 @@ Features
 Documentation
 =============
 
+	* Add the datasource config to config/database.php.
+
+		public $feeds = array('datasource' => 'feeds.feed');
+
 	* Include the pre-built model.
 
 		public $uses = array('Feeds.Aggregator');
@@ -31,4 +35,4 @@ Documentation
 				'Starcraft 2 Armory' => 'http://feeds.feedburner.com/starcraft',
 				'Miles Johnson' => 'http://feeds.feedburner.com/milesj'
 			)
-        ));
+		));
