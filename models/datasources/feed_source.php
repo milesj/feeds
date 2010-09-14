@@ -1,14 +1,12 @@
 <?php
 /**
- * Feed Aggregator
- *
- * A CakePHP datasource that will take a list of feeds and aggregate them into a single array based on their timestamp.
+ * A datasource that will take a list of feeds and aggregate them into a single array based on their timestamp.
  * Works with RSS, RDF and Atom types as well as built in support for caching and limitation.
  *
- * @author      Miles Johnson - www.milesj.me
- * @copyright   Copyright 2006-2010, Miles Johnson, Inc.
- * @license     http://www.opensource.org/licenses/mit-license.php - Licensed under The MIT License
- * @link        http://milesj.me/resources/script/feed-aggregator-component
+ * @author		Miles Johnson - www.milesj.me
+ * @copyright	Copyright 2006-2010, Miles Johnson, Inc.
+ * @license		http://opensource.org/licenses/mit-license.php - Licensed under The MIT License
+ * @link		http://milesj.me/resources/script/feeds-plugin
  */
 
 App::import('Core', array('HttpSocket', 'Folder'));
@@ -18,10 +16,10 @@ App::import(array(
     'file' => 'TypeConverter.php'
 ));
 
-class FeedAggregatorSource extends DataSource {
+class FeedSource extends DataSource {
 
     /**
-	 * Current version: http://milesj.me/resources/logs/feed-aggregator-datasource
+	 * Current version: http://milesj.me/resources/logs/feeds-plugin
 	 *
 	 * @access public
 	 * @var string
@@ -34,7 +32,7 @@ class FeedAggregatorSource extends DataSource {
 	 * @access private
 	 * @var array
 	 */
-	private $__processed = array();
+	private $__feeds = array();
 
 	/**
 	 * Types of feeds and unique element names.
@@ -73,15 +71,14 @@ class FeedAggregatorSource extends DataSource {
 	public function __construct($config = array()) {
 		parent::__construct($config);
 
-        $this->Http = new HttpSocket();
+		$this->Http = new HttpSocket();
 
 		if (Cache::config('feeds') === false) {
             $cachePath = CACHE .'feeds'. DS;
 
-            // Create the cache dir
 			if (!file_exists($cachePath)) {
-				$this->Folder = new Folder();
-				$this->Folder->create($cachePath, 0777);
+				$Folder = new Folder();
+				$Folder->create($cachePath, 0777);
 			}
 
 			Cache::config('feeds', array(
@@ -112,54 +109,72 @@ class FeedAggregatorSource extends DataSource {
      * @return array
      */
     public function listSources() {
-        return $this->feeds;
+		return array_keys($this->__feeds);
     }
 
+	/**
+	 * Grab the feeds through an HTTP request and parse it out into an array.
+	 *
+	 * @access public
+	 * @param object $Model
+	 * @param array $query
+	 * @return array
+	 */
     public function read($Model, $query = array()) {
-        if (!empty($query['feeds'])) {
-			$key = 'feed_'. $query['group'];
+		if (!isset($query['feed'])) {
+			$query['feed'] = array(
+				'explicit' => false,
+				'cache' => false,
+				'expires' => '+1 hour'
+			);
+		}
+	
+		if (!empty($query['conditions'])) {
+			$cache = $query['feed']['cache'];
 
 			// Detect cached first
-			if ($query['cache']) {
-				Cache::set(array('duration' => $query['expires']));
-				$results = Cache::read($key, 'feeds');
+			if ($cache) {
+				Cache::set(array('duration' => $query['feed']['expires']));
+				$results = Cache::read($cache, 'feeds');
 
 				if (is_array($results)) {
 					return $this->_truncate($results, $query['limit']);
 				}
 			}
 
-            if (!isset($this->__processed[$query['group']])) {
-				$this->__processed[$query['group']] = array();
-			}
-
-			// Loop feeds
-			foreach ($query['feeds'] as $source => $feed) {
-				if ($response = $this->Http->get($feed)) {
-                    $this->__processed[$query['group']] = $this->_process(TypeConverter::toArray($response), $query) + $this->__processed[$query['group']];
+			// Request and parse feeds
+			foreach ($query['conditions'] as $source => $url) {
+				if ($response = $this->Http->get($url)) {
+                    $this->__feeds[$source] = $this->_process($response, $query, $source);
 				}
 			}
 
-			// Sort by date
-			if (!empty($this->__processed[$query['group']])) {
-                $this->__processed[$query['group']] = array_filter($this->__processed[$query['group']]);
-				krsort($this->__processed[$query['group']]);
+			// Combine and sort feeds
+			$results = array();
+
+			if (!empty($this->__feeds)) {
+				foreach ($this->__feeds as $source => $feed) {
+					$results = $feed + $results;
+				}
+
+				$results = array_filter($results);
+				krsort($results);
+
+				// Cache
+				if ($cache) {
+					Cache::set(array('duration' => $query['feed']['expires']));
+					Cache::write($cache, $results, 'feeds');
+				}
 			}
 
-			// Cache
-			if ($query['cache']) {
-				Cache::set(array('duration' => $query['expires']));
-				Cache::write($key, $this->__processed[$query['group']], 'feeds');
-			}
-
-			return $this->_truncate($this->__processed[$query['group']], $query['limit']);
+			return $this->_truncate($results, $query['limit']);
 		}
 
 		return false;
     }
 
 	/**
-	 * Extracts a certain value from a variable.
+	 * Extracts a certain value from a node.
 	 *
 	 * @access protected
 	 * @param string $item
@@ -169,15 +184,15 @@ class FeedAggregatorSource extends DataSource {
 	protected function _extract($item, $slugs = array('value')) {
 		if (is_array($item)) {
 			foreach ($slugs as $slug) {
-                if (isset($item['attributes'])) {
+                if (!empty($item[$slug])) {
+					return trim($item[$slug]);
+					
+				} else if (isset($item['attributes'])) {
                     return $this->_extract($item['attributes'], $slugs);
-
-                } else if (isset($item[$slug])) {
-					return $item[$slug];
-				}
+                }
 			}
 		} else {
-			return $item;
+			return trim($item);
 		}
 	}
 
@@ -189,7 +204,8 @@ class FeedAggregatorSource extends DataSource {
 	 * @param array $query
 	 * @return boolean
 	 */
-	protected function _process($feed, $query) {
+	protected function _process($feed, $query, $source) {
+		$feed = TypeConverter::toArray($feed);
         $clean = array();
 
         if (isset($feed['channel'])) {
@@ -200,6 +216,7 @@ class FeedAggregatorSource extends DataSource {
         } else if (isset($feed['item'])) {
             $master = $this->__typeMap['rdf'];
             $root = $feed['item'];
+            $title = $feed['title'];
 
         } else if (isset($feed['entry'])) {
             $master = $this->__typeMap['atom'];
@@ -208,9 +225,13 @@ class FeedAggregatorSource extends DataSource {
         }
 
         // Gather elements
-        $elements = $query['elements'] + array('title', $master['date'], 'guid');
+        $elements = array('title', $master['date'], 'guid');
 
-        if ($query['explicit']) {
+		if (is_array($query['fields'])) {
+			$elements = $query['fields'] + $elements;
+		}
+		
+        if ($query['feed']['explicit']) {
 			$elements[] = $master['desc'];
 		}
 
@@ -219,31 +240,38 @@ class FeedAggregatorSource extends DataSource {
 			if (is_numeric($row)) {
 				$link = null;
 
-				foreach (array('origLink', 'link', 'Link') as $l) {
-					if (isset($item[$l])) {
-						$link = $this->_extract($item[$l], array('value', 'href', 'src'));
+				foreach (array('origLink', 'link') as $linkKey) {
+					if (isset($item[$linkKey])) {
+						$link = $this->_extract($item[$linkKey], array('value', 'href', 'src'));
 					}
 				}
 
-				if ($link) {
-					$data = array('link' => $link, 'channel' => $title);
+				if (!$link) {
+					trigger_error('Feed '. $source .' does not have a valid link element.', E_USER_WARNING);
+					continue;
+				}
+				
+				$data = array(
+					'link' => $link,
+					'channel' => trim($title),
+					'source' => $source
+				);
 
-					foreach ($elements as $element) {
-						if (isset($item[$element])) {
-							if ($element == $master['date']) {
-								$index = 'date';
-							} else if ($element == $master['desc']) {
-								$index = 'description';
-							} else {
-								$index = $element;
-							}
-
-							$data[$index] = $this->_extract($item[$element]);
+				foreach ($elements as $element) {
+					if (isset($item[$element])) {
+						if ($element == $master['date']) {
+							$index = 'date';
+						} else if ($element == $master['desc']) {
+							$index = 'description';
+						} else {
+							$index = $element;
 						}
-					}
 
-					$clean[date('Y-m-d H:i:s', strtotime($item[$master['date']]))] = $data;
+						$data[$index] = $this->_extract($item[$element]);
+					}
 				}
+
+				$clean[date('Y-m-d H:i:s', strtotime($item[$master['date']]))] = $data;
 			}
 		}
 
@@ -263,7 +291,10 @@ class FeedAggregatorSource extends DataSource {
 			$count = 20;
 		}
 
-		if (count($feed) > $count) {
+		if (count($feed) < $count) {
+			return $feed;
+			
+		} else if (count($feed) > $count) {
 			$feed = array_slice($feed, 0, $count);
 		}
 

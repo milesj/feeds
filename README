@@ -1,23 +1,34 @@
-Feed Aggregator v1.4 - CakePHP Component
-****************************************
+Feed Aggregator v2.0 - CakePHP Plugin
+*************************************
 
 Requirements
 ============
 
-	* CakePHP 1.2
+	* CakePHP 1.2.x, 1.3.x
 	* PHP 5.2.x
 
 Features
 ========
 
-    * Supports RSS 2.0, RSS 1.0 (RDF) and Atom feed types
-    * Can support as many feeds as you wish
-    * Separates feeds into groups so you can add accordingly and not conflict
-    * Uses the HttpSocket and XML libraries to parse the feeds
-    * Built in cache support (with a little configuration)
-    * Has a max return limit to cut down the returned arrays size
+	* Supports RSS 2.0, RSS 1.0 (RDF) and Atom feed types
+	* Can support as many feeds as you wish
+	* Separates feeds into groups so you can add accordingly and not conflict
+	* Uses the HttpSocket and XML libraries to parse the feeds
+	* Built in cache support (with a little configuration)
+	* Has a max return limit to cut down the returned arrays size
 
 Documentation
 =============
 
-	* http://www.milesj.me/resources/script/feed-aggregator-component
+	* Include the pre-built model.
+
+		public $uses = array('Feeds.Aggregator');
+
+	* Aggregrate feeds by passing URLs as a condition.
+
+		$feeds = $this->Aggregator->find('all', array(
+			'conditions' => array(
+				'Starcraft 2 Armory' => 'http://feeds.feedburner.com/starcraft',
+				'Miles Johnson' => 'http://feeds.feedburner.com/milesj'
+			)
+        ));
