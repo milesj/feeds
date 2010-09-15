@@ -41,6 +41,7 @@ class Aggregator extends Model {
 	public function find($type, array $options = array()) {
 		$options = $options + array(
 			'fields' => array(),
+			'order' => array('date' => 'ASC'),
 			'limit' => 20,
 			'feed' => array(
 				'explicit' => false,

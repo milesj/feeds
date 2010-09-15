@@ -1,7 +1,7 @@
 <?php
 /**
- * A datasource that will take a list of feeds and aggregate them into a single array based on their timestamp.
- * Works with RSS, RDF and Atom types as well as built in support for caching and limitation.
+ * A datasource that can read and parse web feeds. Can aggregrate multiple feeds at once into a single result.
+ * Supports RSS, RDF and Atom feed types.
  *
  * @author		Miles Johnson - www.milesj.me
  * @copyright	Copyright 2006-2010, Miles Johnson, Inc.
@@ -77,8 +77,11 @@ class FeedSource extends DataSource {
             $cachePath = CACHE .'feeds'. DS;
 
 			if (!file_exists($cachePath)) {
-				$Folder = new Folder();
-				$Folder->create($cachePath, 0777);
+				if (!isset($this->Folder)) {
+					$this->Folder = new Folder();
+				}
+
+				$this->Folder->create($cachePath, 0777);
 			}
 
 			Cache::config('feeds', array(
@@ -128,7 +131,17 @@ class FeedSource extends DataSource {
 				'expires' => '+1 hour'
 			);
 		}
-	
+
+		// Get order sorting
+		$query['feed']['order'] = 'ASC';
+		$query['feed']['sort'] = 'date';
+
+		if (!empty($query['order'][0])) {
+			$sort = array_keys($query['order'][0]);
+			$query['feed']['sort'] = $sort[0];
+			$query['feed']['order'] = $query['order'][0][$query['feed']['sort']];
+		}
+
 		if (!empty($query['conditions'])) {
 			$cache = $query['feed']['cache'];
 
@@ -145,7 +158,7 @@ class FeedSource extends DataSource {
 			// Request and parse feeds
 			foreach ($query['conditions'] as $source => $url) {
 				if ($response = $this->Http->get($url)) {
-                    $this->__feeds[$source] = $this->_process($response, $query, $source);
+                    $this->__feeds[$url] = $this->_process($response, $query, $source);
 				}
 			}
 
@@ -153,12 +166,17 @@ class FeedSource extends DataSource {
 			$results = array();
 
 			if (!empty($this->__feeds)) {
-				foreach ($this->__feeds as $source => $feed) {
+				foreach ($this->__feeds as $url => $feed) {
 					$results = $feed + $results;
 				}
 
 				$results = array_filter($results);
-				krsort($results);
+
+				if ($query['feed']['order'] == 'ASC') {
+					krsort($results);
+				} else {
+					ksort($results);
+				}
 
 				// Cache
 				if ($cache) {
@@ -241,7 +259,7 @@ class FeedSource extends DataSource {
 				$link = null;
 
 				foreach (array('origLink', 'link') as $linkKey) {
-					if (isset($item[$linkKey])) {
+					if (isset($item[$linkKey]) && empty($link)) {
 						$link = $this->_extract($item[$linkKey], array('value', 'href', 'src'));
 					}
 				}
@@ -271,7 +289,15 @@ class FeedSource extends DataSource {
 					}
 				}
 
-				$clean[date('Y-m-d H:i:s', strtotime($item[$master['date']]))] = $data;
+				if (isset($data[$query['feed']['sort']])) {
+					$sort = $data[$query['feed']['sort']];
+				}
+
+				if (!$sort || $query['feed']['sort'] == 'date') {
+					$sort = date('Y-m-d H:i:s', strtotime($data['date']));
+				}
+
+				$clean[$sort] = $data;
 			}
 		}
 

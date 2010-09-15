@@ -10,17 +10,17 @@ Requirements
 Features
 ========
 
+	* A data source that fetches a feed (HTTP Request) and parses it into an array
 	* Supports RSS 2.0, RSS 1.0 (RDF) and Atom feed types
-	* Can support as many feeds as you wish
-	* Separates feeds into groups so you can add accordingly and not conflict
-	* Uses the HttpSocket and XML libraries to parse the feeds
+	* Can aggregrate multiple feeds into a single result
+	* Uses the HttpSocket library to request the feed
 	* Built in cache support (with a little configuration)
 	* Has a max return limit to cut down the returned arrays size
 
 Documentation
 =============
 
-	* Add the datasource config to config/database.php.
+	* Add the data source config to config/database.php.
 
 		public $feeds = array('datasource' => 'feeds.feed');
 
