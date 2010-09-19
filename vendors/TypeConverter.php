@@ -1,13 +1,12 @@
 <?php
 /**
-* A class that handles the detection and conversion of certain resource formats / content types into other formats.
-* The current formats are supported: XML (RSS, Atom), JSON, Array, Object
-*
-* @author      Miles Johnson - www.milesj.me
-* @copyright   Copyright 2006-2010, Miles Johnson, Inc.
-* @license     http://www.opensource.org/licenses/mit-license.php - Licensed under The MIT License
-* @link        http://milesj.me
-*/
+ * A class that handles the detection and conversion of certain resource formats / content types into other formats.
+ * The current formats are supported: XML (RSS, Atom), JSON, Array, Object
+ *
+ * @author		Miles Johnson - www.milesj.me
+ * @copyright	Copyright 2006-2010, Miles Johnson, Inc.
+ * @license		http://www.opensource.org/licenses/mit-license.php - Licensed under The MIT License
+ */
 
 class TypeConverter {
 

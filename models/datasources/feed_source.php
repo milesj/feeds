@@ -11,14 +11,14 @@
 
 App::import('Core', array('HttpSocket', 'Folder'));
 App::import(array(
-    'type' => 'Vendor',
-    'name' => 'TypeConverter',
-    'file' => 'TypeConverter.php'
+	'type' => 'Vendor',
+	'name' => 'TypeConverter',
+	'file' => 'TypeConverter.php'
 ));
 
 class FeedSource extends DataSource {
 
-    /**
+	/**
 	 * Current version: http://milesj.me/resources/logs/feeds-plugin
 	 *
 	 * @access public
@@ -43,25 +43,25 @@ class FeedSource extends DataSource {
 	private $__typeMap = array(
 		'rss' => array(
 			'slug' => 'Rss',
-            'type' => 'rss',
+			'type' => 'rss',
 			'desc' => 'description',
 			'date' => 'pubDate'
 		),
 		'rdf' => array(
 			'slug' => 'RDF',
-            'type' => 'rdf',
+			'type' => 'rdf',
 			'desc' => 'description',
 			'date' => 'date'
 		),
 		'atom' => array(
 			'slug' => 'Feed',
-            'type' => 'atom',
+			'type' => 'atom',
 			'desc' => 'summary',
 			'date' => 'updated'
 		)
 	);
 
-    /**
+	/**
 	 * Default constructor. Set the cache settings.
 	 *
 	 * @access public
@@ -74,7 +74,7 @@ class FeedSource extends DataSource {
 		$this->Http = new HttpSocket();
 
 		if (Cache::config('feeds') === false) {
-            $cachePath = CACHE .'feeds'. DS;
+			$cachePath = CACHE .'feeds'. DS;
 
 			if (!file_exists($cachePath)) {
 				if (!isset($this->Folder)) {
@@ -94,26 +94,26 @@ class FeedSource extends DataSource {
 		}
 	}
 
-    /**
-     * Describe the supported feeds.
-     *
-     * @access public
-     * @param object $Model
-     * @return array
-     */
-    public function describe($Model) {
-        return $this->__typeMap;
-    }
+	/**
+	 * Describe the supported feeds.
+	 *
+	 * @access public
+	 * @param object $Model
+	 * @return array
+	 */
+	public function describe($Model) {
+		return $this->__typeMap;
+	}
 
-    /**
-     * Return a list of aggregrated feed URLs.
-     *
-     * @access public
-     * @return array
-     */
-    public function listSources() {
+	/**
+	 * Return a list of aggregrated feed URLs.
+	 *
+	 * @access public
+	 * @return array
+	 */
+	public function listSources() {
 		return array_keys($this->__feeds);
-    }
+	}
 
 	/**
 	 * Grab the feeds through an HTTP request and parse it out into an array.
@@ -123,7 +123,7 @@ class FeedSource extends DataSource {
 	 * @param array $query
 	 * @return array
 	 */
-    public function read($Model, $query = array()) {
+	public function read($Model, $query = array()) {
 		if (!isset($query['feed'])) {
 			$query['feed'] = array(
 				'explicit' => false,
@@ -137,9 +137,13 @@ class FeedSource extends DataSource {
 		$query['feed']['sort'] = 'date';
 
 		if (!empty($query['order'][0])) {
-			$sort = array_keys($query['order'][0]);
-			$query['feed']['sort'] = $sort[0];
-			$query['feed']['order'] = $query['order'][0][$query['feed']['sort']];
+			if (is_array($query['order'][0])) {
+				$sort = array_keys($query['order'][0]);
+				$query['feed']['sort'] = $sort[0];
+				$query['feed']['order'] = strtoupper($query['order'][0][$query['feed']['sort']]);
+			} else {
+				$query['feed']['order'] = strtoupper($query['order'][0]);
+			}
 		}
 
 		// Attempt to get the feed from the model
@@ -164,7 +168,7 @@ class FeedSource extends DataSource {
 			// Request and parse feeds
 			foreach ($query['conditions'] as $source => $url) {
 				if ($response = $this->Http->get($url)) {
-                    $this->__feeds[$url] = $this->_process($response, $query, $source);
+					$this->__feeds[$url] = $this->_process($response, $query, $source);
 				}
 			}
 
@@ -195,7 +199,7 @@ class FeedSource extends DataSource {
 		}
 
 		return false;
-    }
+	}
 
 	/**
 	 * Extracts a certain value from a node.
@@ -208,12 +212,12 @@ class FeedSource extends DataSource {
 	protected function _extract($item, $slugs = array('value')) {
 		if (is_array($item)) {
 			foreach ($slugs as $slug) {
-                if (!empty($item[$slug])) {
+				if (!empty($item[$slug])) {
 					return trim($item[$slug]);
-					
+
 				} else if (isset($item['attributes'])) {
-                    return $this->_extract($item['attributes'], $slugs);
-                }
+					return $this->_extract($item['attributes'], $slugs);
+				}
 			}
 		} else {
 			return trim($item);
@@ -230,43 +234,39 @@ class FeedSource extends DataSource {
 	 */
 	protected function _process($feed, $query, $source) {
 		$feed = TypeConverter::toArray($feed);
-        $clean = array();
+		$clean = array();
 
-        if (isset($feed['channel'])) {
-            $master = $this->__typeMap['rss'];
-            $root = $feed['channel']['item'];
-            $title = $feed['channel']['title'];
+		if (isset($feed['channel'])) {
+			$master = $this->__typeMap['rss'];
+			$root = $feed['channel']['item'];
+			$title = $feed['channel']['title'];
 
-        } else if (isset($feed['item'])) {
-            $master = $this->__typeMap['rdf'];
-            $root = $feed['item'];
-            $title = $feed['title'];
+		} else if (isset($feed['item'])) {
+			$master = $this->__typeMap['rdf'];
+			$root = $feed['item'];
+			$title = $feed['title'];
 
-        } else if (isset($feed['entry'])) {
-            $master = $this->__typeMap['atom'];
-            $root = $feed['entry'];
-            $title = $feed['title'];
-        }
+		} else if (isset($feed['entry'])) {
+			$master = $this->__typeMap['atom'];
+			$root = $feed['entry'];
+			$title = $feed['title'];
+		}
 
-        // Gather elements
-        $elements = array('title', $master['date'], 'guid');
+		// Gather elements
+		$elements = array('title', $master['date'], 'guid');
 
 		if (is_array($query['fields'])) {
 			$elements = $query['fields'] + $elements;
 		}
-		
-        if ($query['feed']['explicit']) {
+
+		if ($query['feed']['explicit']) {
 			$elements[] = $master['desc'];
 		}
 
 		// Loop the feed
 		foreach ($root as $row => $item) {
 			try {
-				$data = array(
-					'link' => '',
-					'channel' => trim($title),
-					'source' => $source
-				);
+				$data = array('channel' => trim($title));
 
 				foreach (array('origLink', 'link') as $linkKey) {
 					if (isset($item[$linkKey]) && empty($data['link'])) {
@@ -276,6 +276,10 @@ class FeedSource extends DataSource {
 
 				if (!$data['link']) {
 					throw new Exception(sprintf('Feed %s does not have a valid link element.', $source));
+				}
+
+				if (is_string($source) && !empty($source)) {
+					$data['source'] = $source;
 				}
 
 				foreach ($elements as $element) {
@@ -301,7 +305,7 @@ class FeedSource extends DataSource {
 				}
 
 				$clean[$sort] = $data;
-				
+
 			} catch (Exception $e) {
 				continue;
 			}

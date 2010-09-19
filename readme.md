@@ -28,7 +28,7 @@ Within your model(s), there are multiple ways to declare which feeds to parse.
 
 ### 1) Using the $feedUrls property ###
 
-If you want a model to represent a single feed, you can use the $feedUrls property in the class.
+If you want a model to represent a single feed, you can use the $feedUrls property in the class. (There is an example model within the plugin).
 
 	public $feedUrls = 'http://feeds.feedburner.com/milesj';
 
