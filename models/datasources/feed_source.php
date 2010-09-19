@@ -62,7 +62,7 @@ class FeedSource extends DataSource {
 	);
 
     /**
-	 * Set the cache settings.
+	 * Default constructor. Set the cache settings.
 	 *
 	 * @access public
 	 * @param array $config
@@ -142,6 +142,12 @@ class FeedSource extends DataSource {
 			$query['feed']['order'] = $query['order'][0][$query['feed']['sort']];
 		}
 
+		// Attempt to get the feed from the model
+		if (empty($query['conditions']) && !empty($Model->feedUrls)) {
+			$query['conditions'] = is_array($Model->feedUrls) ? $Model->feedUrls : array($Model->feedUrls);
+		}
+
+		// Loop the sources
 		if (!empty($query['conditions'])) {
 			$cache = $query['feed']['cache'];
 
@@ -255,25 +261,22 @@ class FeedSource extends DataSource {
 
 		// Loop the feed
 		foreach ($root as $row => $item) {
-			if (is_numeric($row)) {
-				$link = null;
-
-				foreach (array('origLink', 'link') as $linkKey) {
-					if (isset($item[$linkKey]) && empty($link)) {
-						$link = $this->_extract($item[$linkKey], array('value', 'href', 'src'));
-					}
-				}
-
-				if (!$link) {
-					trigger_error('Feed '. $source .' does not have a valid link element.', E_USER_WARNING);
-					continue;
-				}
-				
+			try {
 				$data = array(
-					'link' => $link,
+					'link' => '',
 					'channel' => trim($title),
 					'source' => $source
 				);
+
+				foreach (array('origLink', 'link') as $linkKey) {
+					if (isset($item[$linkKey]) && empty($data['link'])) {
+						$data['link'] = $this->_extract($item[$linkKey], array('value', 'href', 'src'));
+					}
+				}
+
+				if (!$data['link']) {
+					throw new Exception(sprintf('Feed %s does not have a valid link element.', $source));
+				}
 
 				foreach ($elements as $element) {
 					if (isset($item[$element])) {
@@ -298,6 +301,9 @@ class FeedSource extends DataSource {
 				}
 
 				$clean[$sort] = $data;
+				
+			} catch (Exception $e) {
+				continue;
 			}
 		}
 
@@ -317,10 +323,7 @@ class FeedSource extends DataSource {
 			$count = 20;
 		}
 
-		if (count($feed) < $count) {
-			return $feed;
-			
-		} else if (count($feed) > $count) {
+		if (count($feed) > $count) {
 			$feed = array_slice($feed, 0, $count);
 		}
 

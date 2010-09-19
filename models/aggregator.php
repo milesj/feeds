@@ -10,21 +10,21 @@
 
 class Aggregator extends Model {
 
-    /**
-     * No database table needed.
-     *
-     * @access public
-     * @var boolean
-     */
-    public $useTable = false;
+	/**
+	 * No database table needed.
+	 *
+	 * @access public
+	 * @var boolean
+	 */
+	public $useTable = false;
 
-    /**
-     * Use the feeds datasource.
-     *
-     * @access public
-     * @var boolean
-     */
-    public $useDbConfig = 'feeds';
+	/**
+	 * Use the feeds datasource.
+	 *
+	 * @access public
+	 * @var boolean
+	 */
+	public $useDbConfig = 'feeds';
 
 	/**
 	 * Overwrite the find method to be specific for feed aggregation.
