@@ -24,7 +24,7 @@ class FeedSource extends DataSource {
 	 * @access public
 	 * @var string
 	 */
-	public $version = '2.1';
+	public $version = '2.1.1';
 
 	/**
 	 * The processed feeds in array format.
@@ -217,22 +217,33 @@ class FeedSource extends DataSource {
 		$feed = TypeConverter::toArray($feed);
 		$clean = array();
 
-		if (isset($feed['channel'])) {
-			$items = $feed['channel']['item'];
-		} else if (isset($feed['item'])) {
-			$items = $feed['item'];
-		} else if (isset($feed['entry'])) {
-			$items = $feed['entry'];
+		if (!empty($query['root']) && !empty($feed[$query['root']])) {
+			$items = $feed[$query['root']];
+		} else {
+			// Rss
+			if (isset($feed['channel'])) {
+				$items = $feed['channel']['item'];
+			// Rdf
+			} else if (isset($feed['item'])) {
+				$items = $feed['item'];
+			// Atom
+			} else if (isset($feed['entry'])) {
+				$items = $feed['entry'];
+			// Xml
+			} else {
+				$items = $feed;
+			}
 		}
 
 		// Gather elements
 		$elements = array(
 			'title',
-			'author' => array('author', 'writer', 'editor', 'user'),
 			'guid' => array('guid', 'id'),
 			'date' => array('date', 'pubDate', 'published', 'updated'),
 			'link' => array('link', 'origLink'),
-			'description' => array('description', 'desc', 'summary', 'content')
+			'image' => array('image', 'thumbnail'),
+			'author' => array('author', 'writer', 'editor', 'user'),
+			'description' => array('description', 'desc', 'summary', 'content', 'text')
 		);
 
 		if (is_array($query['fields'])) {
@@ -249,9 +260,20 @@ class FeedSource extends DataSource {
 					$keys = array($keys);
 				}
 
+				if (isset($keys['attributes'])) {
+					$attributes = $keys['attributes'];
+					unset($keys['attributes']);
+				} else {
+					$attributes = array('value', 'href', 'src', 'name', 'label');
+				}
+
+				if (isset($keys['keys'])) {
+					$keys = $keys['keys'];
+				}
+
 				foreach ($keys as $key) {
 					if (isset($item[$key]) && empty($data[$element])) {
-						$value = $this->_extract($item[$key], array('value', 'href', 'src', 'name', 'label'));
+						$value = $this->_extract($item[$key], $attributes);
 
 						if (!empty($value)) {
 							$data[$element] = $value;
