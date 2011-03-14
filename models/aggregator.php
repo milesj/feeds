@@ -44,6 +44,7 @@ class Aggregator extends Model {
 			'order' => array('date' => 'ASC'),
 			'limit' => 20,
 			'feed' => array(
+				'root' => '',
 				'cache' => false,
 				'expires' => '+1 hour'
 			)

@@ -97,12 +97,11 @@ class FeedSource extends DataSource {
 	 * @return array
 	 */
 	public function read($Model, $query = array()) {
-		if (empty($query['feed'])) {
-			$query['feed'] = array(
-				'cache' => false,
-				'expires' => '+1 hour'
-			);
-		}
+		$query['feed'] = $query['feed'] + array(
+			'root' => '',
+			'cache' => false,
+			'expires' => '+1 hour'
+		);
 
 		// Get order sorting
 		$query['feed']['order'] = 'ASC';
@@ -217,8 +216,8 @@ class FeedSource extends DataSource {
 		$feed = TypeConverter::toArray($feed);
 		$clean = array();
 
-		if (!empty($query['root']) && !empty($feed[$query['root']])) {
-			$items = $feed[$query['root']];
+		if (!empty($query['root']) && !empty($feed[$query['feed']['root']])) {
+			$items = $feed[$query['feed']['root']];
 		} else {
 			// Rss
 			if (isset($feed['channel'])) {
