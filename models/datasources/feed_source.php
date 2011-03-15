@@ -60,7 +60,7 @@ class FeedSource extends DataSource {
 			Cache::config('feeds', array(
 				'engine' 	=> 'File',
 				'serialize' => true,
-				'prefix'	=> '',
+				'prefix'	=> 'feed_',
 				'path' 		=> $cachePath,
 				'duration'	=> '+1 day'
 			));
@@ -137,18 +137,23 @@ class FeedSource extends DataSource {
 				Cache::set(array('duration' => $query['feed']['expires']));
 				$results = Cache::read($cache, 'feeds');
 
-				if (is_array($results)) {
+				if (!empty($results) && is_array($results)) {
 					return $this->_truncate($results, $query['limit']);
 				}
 			}
 
 			// Request and parse feeds
 			foreach ($query['conditions'] as $source => $url) {
+				$cacheKey = $Model->name .'__'. md5($url);
+
+				$this->__feeds[$url] = Cache::read($cacheKey, 'feeds');
+
 				if (empty($this->__feeds[$url])) {
 					$response = $this->Http->get($url);
 
 					if (!empty($response)) {
 						$this->__feeds[$url] = $this->_process($response, $query, $source);
+						Cache::write($cacheKey, $this->__feeds[$url], 'feeds');
 					}
 				}
 			}
