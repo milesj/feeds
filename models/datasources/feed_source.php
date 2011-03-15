@@ -97,11 +97,17 @@ class FeedSource extends DataSource {
 	 * @return array
 	 */
 	public function read($Model, $query = array()) {
-		$query['feed'] = $query['feed'] + array(
+		$defaults = array(
 			'root' => '',
 			'cache' => false,
 			'expires' => '+1 hour'
 		);
+
+		if (!empty($query['feed'])) {
+			$query['feed'] = (array)$query['feed'] + $defaults;
+		} else {
+			$query['feed'] = $defaults;
+		}
 
 		// Get order sorting
 		$query['feed']['order'] = 'ASC';
