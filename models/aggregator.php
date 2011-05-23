@@ -1,11 +1,13 @@
 <?php
 /**
+ * Aggregator Model
+ * 
  * A model that connects to the feed datasource and defines a custom find() function specific to aggregation.
  *
- * @author		Miles Johnson - www.milesj.me
- * @copyright	Copyright 2006-2010, Miles Johnson, Inc.
- * @license		http://www.opensource.org/licenses/mit-license.php - Licensed under The MIT License
- * @link		http://milesj.me/resources/script/feeds-plugin
+ * @author      Miles Johnson - http://milesj.me
+ * @copyright   Copyright 2006-2011, Miles Johnson, Inc.
+ * @license     http://opensource.org/licenses/mit-license.php - Licensed under The MIT License
+ * @link        http://milesj.me/code/cakephp/feeds
  */
 
 class Aggregator extends Model {
@@ -33,9 +35,9 @@ class Aggregator extends Model {
 	 * @access public
 	 * @param string $type
 	 * @param array $options
-	 *		explicit - Returns full or simple data
-	 *		cache - Key for cache
-	 *		expires - How long should the feed be cached
+	 *		- root: A custom root node
+	 *		- cache: Key for cache
+	 *		- expires: How long should the feed be cached
 	 * @return array
 	 */
 	public function find($type, array $options = array()) {

@@ -5,10 +5,10 @@
  * A datasource that can read and parse web feeds. Can aggregrate multiple feeds at once into a single result.
  * Supports RSS, RDF and Atom feed types.
  *
- * @author		Miles Johnson - http://milesj.me
- * @copyright	Copyright 2006-2011, Miles Johnson, Inc.
- * @license		http://opensource.org/licenses/mit-license.php - Licensed under The MIT License
- * @link		http://milesj.me/code/cakephp/feeds
+ * @author      Miles Johnson - http://milesj.me
+ * @copyright   Copyright 2006-2011, Miles Johnson, Inc.
+ * @license     http://opensource.org/licenses/mit-license.php - Licensed under The MIT License
+ * @link        http://milesj.me/code/cakephp/feeds
  */
 
 App::import('Core', array('HttpSocket', 'Folder'));

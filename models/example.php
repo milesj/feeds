@@ -1,11 +1,13 @@
 <?php
 /**
+ * Example Model
+ * 
  * An example model of how to use a model to relate to a single feed.
  *
- * @author		Miles Johnson - www.milesj.me
- * @copyright	Copyright 2006-2010, Miles Johnson, Inc.
- * @license		http://www.opensource.org/licenses/mit-license.php - Licensed under The MIT License
- * @link		http://milesj.me/resources/script/feeds-plugin
+ * @author      Miles Johnson - http://milesj.me
+ * @copyright   Copyright 2006-2011, Miles Johnson, Inc.
+ * @license     http://opensource.org/licenses/mit-license.php - Licensed under The MIT License
+ * @link        http://milesj.me/code/cakephp/feeds
  */
 
 class Example extends Model {
