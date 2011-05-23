@@ -1,12 +1,14 @@
 <?php
 /**
+ * Feeds Datasource
+ * 
  * A datasource that can read and parse web feeds. Can aggregrate multiple feeds at once into a single result.
  * Supports RSS, RDF and Atom feed types.
  *
- * @author		Miles Johnson - www.milesj.me
- * @copyright	Copyright 2006-2010, Miles Johnson, Inc.
+ * @author		Miles Johnson - http://milesj.me
+ * @copyright	Copyright 2006-2011, Miles Johnson, Inc.
  * @license		http://opensource.org/licenses/mit-license.php - Licensed under The MIT License
- * @link		http://milesj.me/resources/script/feeds-plugin
+ * @link		http://milesj.me/code/cakephp/feeds
  */
 
 App::import('Core', array('HttpSocket', 'Folder'));
@@ -19,20 +21,20 @@ App::import(array(
 class FeedSource extends DataSource {
 
 	/**
-	 * Current version: http://milesj.me/resources/logs/feeds-plugin
+	 * Current version.
 	 *
 	 * @access public
 	 * @var string
 	 */
-	public $version = '2.1.1';
+	public $version = '2.2';
 
 	/**
 	 * The processed feeds in array format.
 	 *
-	 * @access private
+	 * @access protected
 	 * @var array
 	 */
-	private $__feeds = array();
+	protected $_feeds = array();
 
 	/**
 	 * Default constructor. Set the cache settings.
@@ -75,7 +77,7 @@ class FeedSource extends DataSource {
 	 * @return array
 	 */
 	public function describe($Model) {
-		return $this->__typeMap;
+		return $this->_typeMap;
 	}
 
 	/**
@@ -85,7 +87,7 @@ class FeedSource extends DataSource {
 	 * @return array
 	 */
 	public function listSources() {
-		return array_keys($this->__feeds);
+		return array_keys($this->_feeds);
 	}
 
 	/**
@@ -144,16 +146,17 @@ class FeedSource extends DataSource {
 
 			// Request and parse feeds
 			foreach ($query['conditions'] as $source => $url) {
-				$cacheKey = $Model->name .'__'. md5($url);
+				$cacheKey = $Model->name .'_'. md5($url);
 
-				$this->__feeds[$url] = Cache::read($cacheKey, 'feeds');
+				$this->_feeds[$url] = Cache::read($cacheKey, 'feeds');
 
-				if (empty($this->__feeds[$url])) {
+				if (empty($this->_feeds[$url])) {
 					$response = $this->Http->get($url);
 
 					if (!empty($response)) {
-						$this->__feeds[$url] = $this->_process($response, $query, $source);
-						Cache::write($cacheKey, $this->__feeds[$url], 'feeds');
+						$this->_feeds[$url] = $this->_process($response, $query, $source);
+						
+						Cache::write($cacheKey, $this->_feeds[$url], 'feeds');
 					}
 				}
 			}
@@ -161,9 +164,9 @@ class FeedSource extends DataSource {
 			// Combine and sort feeds
 			$results = array();
 
-			if (!empty($this->__feeds)) {
+			if (!empty($this->_feeds)) {
 				foreach ($query['conditions'] as $source => $url) {
-					$results = $this->__feeds[$url] + $results;
+					$results = $this->_feeds[$url] + $results;
 				}
 
 				$results = array_filter($results);
@@ -231,7 +234,7 @@ class FeedSource extends DataSource {
 			$items = $feed[$query['feed']['root']];
 		} else {
 			// Rss
-			if (isset($feed['channel'])) {
+			if (isset($feed['channel']) && isset($feed['channel']['item'])) {
 				$items = $feed['channel']['item'];
 			// Rdf
 			} else if (isset($feed['item'])) {
@@ -261,58 +264,60 @@ class FeedSource extends DataSource {
 		}
 
 		// Loop the feed
-		foreach ($items as $item) {
-			$data = array();
+		if (!empty($items) && is_array($items)) {
+			foreach ($items as $item) {
+				$data = array();
 
-			foreach ($elements as $element => $keys) {
-				if (is_numeric($element)) {
-					$element = $keys;
-					$keys = array($keys);
-				}
+				foreach ($elements as $element => $keys) {
+					if (is_numeric($element)) {
+						$element = $keys;
+						$keys = array($keys);
+					}
 
-				if (isset($keys['attributes'])) {
-					$attributes = $keys['attributes'];
-					unset($keys['attributes']);
-				} else {
-					$attributes = array('value', 'href', 'src', 'name', 'label');
-				}
+					if (isset($keys['attributes'])) {
+						$attributes = $keys['attributes'];
+						unset($keys['attributes']);
+					} else {
+						$attributes = array('value', 'href', 'src', 'name', 'label');
+					}
 
-				if (isset($keys['keys'])) {
-					$keys = $keys['keys'];
-				}
+					if (isset($keys['keys'])) {
+						$keys = $keys['keys'];
+					}
 
-				foreach ($keys as $key) {
-					if (isset($item[$key]) && empty($data[$element])) {
-						$value = $this->_extract($item[$key], $attributes);
+					foreach ($keys as $key) {
+						if (isset($item[$key]) && empty($data[$element])) {
+							$value = $this->_extract($item[$key], $attributes);
 
-						if (!empty($value)) {
-							$data[$element] = $value;
-							break;
+							if (!empty($value)) {
+								$data[$element] = $value;
+								break;
+							}
 						}
 					}
 				}
-			}
 
-			if (empty($data['link'])) {
-				trigger_error(sprintf('Feed %s does not have a valid link element.', $source), E_USER_NOTICE);
-				continue;
-			}
+				if (empty($data['link'])) {
+					trigger_error(sprintf('Feed %s does not have a valid link element.', $source), E_USER_NOTICE);
+					continue;
+				}
 
-			if (!empty($source)) {
-				$data['source'] = (string)$source;
-			}
+				if (!empty($source)) {
+					$data['source'] = (string)$source;
+				}
 
-			if (isset($data[$query['feed']['sort']])) {
-				$sort = $data[$query['feed']['sort']];
-			}
+				if (isset($data[$query['feed']['sort']])) {
+					$sort = $data[$query['feed']['sort']];
+				}
 
-			if (!$sort || $query['feed']['sort'] == 'date') {
-				$sort = date('Y-m-d H:i:s', strtotime($data['date']));
-			}
+				if (!$sort || $query['feed']['sort'] == 'date') {
+					$sort = date('Y-m-d H:i:s', strtotime($data['date']));
+				}
 
-			$clean[$sort] = $data;
+				$clean[$sort] = $data;
+			}
 		}
-
+		
 		return $clean;
 	}
 

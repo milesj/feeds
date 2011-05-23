@@ -1,12 +1,12 @@
-# Feeds Plugin v2.1.1 #
+# Feeds v2.2 #
 
-Feeds is a CakePHP plugin that contains the functionality to parse external RSS feeds into your application through the model layer.
+Feeds is a CakePHP plugin that provides the functionality to parse external RSS feeds into your application through the model layer.
 
 ## Requirements ##
 
 * CakePHP 1.2.x, 1.3.x
 * PHP 5.2.x
-* SimpleXML
+* SimpleXML - http://php.net/manual/book.simplexml.php
 
 ## Features ##
 
