@@ -305,13 +305,19 @@ class FeedSource extends DataSource {
 				if (!empty($source)) {
 					$data['source'] = (string)$source;
 				}
+				
+				$sort = null;
 
 				if (isset($data[$query['feed']['sort']])) {
 					$sort = $data[$query['feed']['sort']];
 				}
 
-				if (!$sort || $query['feed']['sort'] == 'date') {
-					$sort = date('Y-m-d H:i:s', strtotime($data['date']));
+				if (!$sort) {
+					if ($query['feed']['sort'] == 'date' && isset($data['date'])) {
+						$sort = strtotime($data['date']);
+					} else {
+						$sort = microtime();
+					}
 				}
 
 				$clean[$sort] = $data;
