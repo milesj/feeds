@@ -12,8 +12,8 @@
  */
 
 App::uses('Folder', 'Utility');
-App::uses('HttpSocket', 'Network/Htto');
-App::uses('TypeConverter', 'Vendor');
+App::uses('HttpSocket', 'Network/Http');
+App::import('Vendor', 'Feeds.TypeConverter');
 
 class FeedSource extends DataSource {
 
@@ -49,10 +49,7 @@ class FeedSource extends DataSource {
 			$cachePath = CACHE .'feeds'. DS;
 
 			if (!file_exists($cachePath)) {
-				if (!isset($this->Folder)) {
-					$this->Folder = new Folder();
-				}
-
+				$this->Folder = new Folder();
 				$this->Folder->create($cachePath, 0777);
 			}
 
@@ -70,11 +67,11 @@ class FeedSource extends DataSource {
 	 * Describe the supported feeds.
 	 *
 	 * @access public
-	 * @param object $Model
+	 * @param Model $model
 	 * @return array
 	 */
-	public function describe($Model) {
-		return $this->_typeMap;
+	public function describe($model) {
+		return $this->_feeds;
 	}
 
 	/**
@@ -91,19 +88,17 @@ class FeedSource extends DataSource {
 	 * Grab the feeds through an HTTP request and parse it out into an array.
 	 *
 	 * @access public
-	 * @param object $Model
+	 * @param Model $model
 	 * @param array $query
 	 * @return array
 	 */
-	public function read($Model, $query = array()) {
-		$defaults = array(
-			'root' => '',
-			'cache' => false,
-			'expires' => '+1 hour'
-		);
-
+	public function read($model, $query = array()) {
 		if (!empty($query['feed'])) {
-			$query['feed'] = (array)$query['feed'] + $defaults;
+			$query['feed'] = (array) $query['feed'] + array(
+				'root' => '',
+				'cache' => false,
+				'expires' => '+1 hour'
+			);
 		} else {
 			$query['feed'] = $defaults;
 		}
@@ -123,8 +118,8 @@ class FeedSource extends DataSource {
 		}
 
 		// Attempt to get the feed from the model
-		if (empty($query['conditions']) && !empty($Model->feedUrls)) {
-			$query['conditions'] = is_array($Model->feedUrls) ? $Model->feedUrls : array($Model->feedUrls);
+		if (empty($query['conditions']) && !empty($model->feedUrls)) {
+			$query['conditions'] = (array) $model->feedUrls;
 		}
 
 		// Loop the sources
@@ -143,7 +138,7 @@ class FeedSource extends DataSource {
 
 			// Request and parse feeds
 			foreach ($query['conditions'] as $source => $url) {
-				$cacheKey = $Model->name .'_'. md5($url);
+				$cacheKey = $model->name .'_'. md5($url);
 
 				$this->_feeds[$url] = Cache::read($cacheKey, 'feeds');
 
@@ -174,7 +169,6 @@ class FeedSource extends DataSource {
 					ksort($results);
 				}
 
-				// Cache
 				if ($cache) {
 					Cache::set(array('duration' => $query['feed']['expires']));
 					Cache::write($cache, $results, 'feeds');
@@ -219,12 +213,13 @@ class FeedSource extends DataSource {
 	 * Processes the feed and rebuilds an array based on the feeds type (RSS, RDF, Atom).
 	 *
 	 * @access protected
-	 * @param array $feed
+	 * @param CakeResponse $response
 	 * @param array $query
+	 * @param string $source
 	 * @return boolean
 	 */
-	protected function _process($feed, $query, $source) {
-		$feed = TypeConverter::toArray($feed);
+	protected function _process($response, $query, $source) {
+		$feed = TypeConverter::toArray($response->body());
 		$clean = array();
 
 		if (!empty($query['root']) && !empty($feed[$query['feed']['root']])) {
@@ -300,7 +295,7 @@ class FeedSource extends DataSource {
 				}
 
 				if (!empty($source)) {
-					$data['source'] = (string)$source;
+					$data['source'] = (string) $source;
 				}
 				
 				$sort = null;
