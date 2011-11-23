@@ -1,6 +1,6 @@
 <?php
 /**
- * Feeds Datasource
+ * Feeds DataSource
  * 
  * A datasource that can read and parse web feeds. Can aggregrate multiple feeds at once into a single result.
  * Supports RSS, RDF and Atom feed types.
@@ -11,12 +11,9 @@
  * @link        http://milesj.me/code/cakephp/feeds
  */
 
-App::import('Core', array('HttpSocket', 'Folder'));
-App::import(array(
-	'type' => 'Vendor',
-	'name' => 'TypeConverter',
-	'file' => 'TypeConverter.php'
-));
+App::uses('Folder', 'Utility');
+App::uses('HttpSocket', 'Network/Htto');
+App::uses('TypeConverter', 'Vendor');
 
 class FeedSource extends DataSource {
 
@@ -26,7 +23,7 @@ class FeedSource extends DataSource {
 	 * @access public
 	 * @var string
 	 */
-	public $version = '2.2';
+	public $version = '3.0';
 
 	/**
 	 * The processed feeds in array format.
