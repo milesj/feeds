@@ -12,11 +12,7 @@
  */
 
 App::import('Core', array('HttpSocket', 'Folder'));
-App::import(array(
-	'type' => 'Vendor',
-	'name' => 'TypeConverter',
-	'file' => 'TypeConverter.php'
-));
+App::import('Vendor', 'Feeds.TypeConverter', array('file'=>'TypeConverter.php'));
 
 class FeedSource extends DataSource {
 
