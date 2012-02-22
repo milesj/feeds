@@ -12,11 +12,7 @@
  */
 
 App::import('Core', array('HttpSocket', 'Folder'));
-App::import(array(
-	'type' => 'Vendor',
-	'name' => 'TypeConverter',
-	'file' => 'TypeConverter.php'
-));
+App::import('Vendor', 'Feeds.TypeConverter', array('file' => 'TypeConverter.php'));
 
 class FeedSource extends DataSource {
 
@@ -26,7 +22,7 @@ class FeedSource extends DataSource {
 	 * @access public
 	 * @var string
 	 */
-	public $version = '2.2';
+	public $version = '2.2.2';
 
 	/**
 	 * The processed feeds in array format.
