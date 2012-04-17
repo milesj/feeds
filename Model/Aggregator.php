@@ -54,5 +54,18 @@ class Aggregator extends Model {
 
 		return parent::find($type, $options);
 	}
+	
+	public function afterFind($results = array(), $primary) {
+		$rfc822 = 'd M Y H:i:s T';
+		if (!empty($results)) {
+			foreach ($results as &$result) {
+				if ($time = DateTime::createFromFormat($rfc822, $result['date'].'C')) {
+					$result['date'] = $time->format('Y-m-d H:i:s');
+				}
+			}
+		}
+		return $results;
+	}
+	
 
 }
