@@ -248,6 +248,7 @@ class FeedSource extends DataSource {
 			'link' => array('link', 'origLink'),
 			'image' => array('image', 'thumbnail'),
 			'author' => array('author', 'writer', 'editor', 'user'),
+			'source' => array('source'),
 			'description' => array('description', 'desc', 'summary', 'content', 'text')
 		);
 
@@ -292,10 +293,6 @@ class FeedSource extends DataSource {
 				if (empty($data['link'])) {
 					trigger_error(sprintf('Feed %s does not have a valid link element.', $source), E_USER_NOTICE);
 					continue;
-				}
-
-				if (!empty($source)) {
-					$data['source'] = (string) $source;
 				}
 				
 				$sort = null;
