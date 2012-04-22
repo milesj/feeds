@@ -1,7 +1,7 @@
 <?php
 /**
  * Feeds Datasource
- * 
+ *
  * A datasource that can read and parse web feeds. Can aggregrate multiple feeds at once into a single result.
  * Supports RSS, RDF and Atom feed types.
  *
@@ -37,7 +37,6 @@ class FeedSource extends DataSource {
 	 *
 	 * @access public
 	 * @param array $config
-	 * @return void
 	 */
 	public function __construct($config = array()) {
 		parent::__construct($config);
@@ -129,7 +128,7 @@ class FeedSource extends DataSource {
 		// Loop the sources
 		if (!empty($query['conditions'])) {
 			$cache = $query['feed']['cache'];
-			
+
 			// Detect cached first
 			if ($cache) {
 				Cache::set(array('duration' => $query['feed']['expires']));
@@ -151,7 +150,7 @@ class FeedSource extends DataSource {
 
 					if (!empty($response)) {
 						$this->_feeds[$url] = $this->_process($response, $query, $source);
-						
+
 						Cache::write($cacheKey, $this->_feeds[$url], 'feeds');
 					}
 				}
@@ -162,7 +161,9 @@ class FeedSource extends DataSource {
 
 			if (!empty($this->_feeds)) {
 				foreach ($query['conditions'] as $source => $url) {
-					$results = $this->_feeds[$url] + $results;
+					if (!empty($this->_feeds[$url])) {
+						$results = $this->_feeds[$url] + $results;
+					}
 				}
 
 				$results = array_filter($results);
@@ -198,7 +199,7 @@ class FeedSource extends DataSource {
 		if (is_array($item)) {
 			if (isset($item[0])) {
 				return $this->_extract($item[0], $keys);
-				
+
 			} else {
 				foreach ($keys as $key) {
 					if (!empty($item[$key])) {
@@ -220,6 +221,7 @@ class FeedSource extends DataSource {
 	 * @access protected
 	 * @param array $feed
 	 * @param array $query
+	 * @param string $source
 	 * @return boolean
 	 */
 	protected function _process($feed, $query, $source) {
@@ -244,6 +246,10 @@ class FeedSource extends DataSource {
 			}
 		}
 
+		if (empty($items) || !is_array($items)) {
+			return $clean;
+		}
+
 		// Gather elements
 		$elements = array(
 			'title',
@@ -252,7 +258,8 @@ class FeedSource extends DataSource {
 			'link' => array('link', 'origLink'),
 			'image' => array('image', 'thumbnail'),
 			'author' => array('author', 'writer', 'editor', 'user'),
-			'description' => array('description', 'desc', 'summary', 'content', 'text')
+			'description' => array('description', 'desc', 'summary', 'content', 'text'),
+			'source' => array('source')
 		);
 
 		if (is_array($query['fields'])) {
@@ -260,66 +267,66 @@ class FeedSource extends DataSource {
 		}
 
 		// Loop the feed
-		if (!empty($items) && is_array($items)) {
-			foreach ($items as $item) {
-				$data = array();
+		foreach ($items as $item) {
+			$data = array();
 
-				foreach ($elements as $element => $keys) {
-					if (is_numeric($element)) {
-						$element = $keys;
-						$keys = array($keys);
-					}
+			foreach ($elements as $element => $keys) {
+				if (is_numeric($element)) {
+					$element = $keys;
+					$keys = array($keys);
+				}
 
-					if (isset($keys['attributes'])) {
-						$attributes = $keys['attributes'];
-						unset($keys['attributes']);
-					} else {
-						$attributes = array('value', 'href', 'src', 'name', 'label');
-					}
+				if (isset($keys['attributes'])) {
+					$attributes = $keys['attributes'];
+					unset($keys['attributes']);
+				} else {
+					$attributes = array('value', 'href', 'src', 'name', 'label');
+				}
 
-					if (isset($keys['keys'])) {
-						$keys = $keys['keys'];
-					}
+				if (isset($keys['keys'])) {
+					$keys = $keys['keys'];
+				}
 
-					foreach ($keys as $key) {
-						if (isset($item[$key]) && empty($data[$element])) {
-							$value = $this->_extract($item[$key], $attributes);
+				foreach ($keys as $key) {
+					if (isset($item[$key]) && empty($data[$element])) {
+						$value = $this->_extract($item[$key], $attributes);
 
-							if (!empty($value)) {
-								$data[$element] = $value;
-								break;
-							}
+						if (!empty($value)) {
+							$data[$element] = $value;
+							break;
 						}
 					}
 				}
+			}
 
-				if (empty($data['link'])) {
-					trigger_error(sprintf('Feed %s does not have a valid link element.', $source), E_USER_NOTICE);
-					continue;
+			if (empty($data['link'])) {
+				trigger_error(sprintf('Feed %s does not have a valid link element.', $source), E_USER_NOTICE);
+				continue;
+			}
+
+			if (empty($data['source']) && $source) {
+				$data['source'] = (string) $source;
+			}
+
+			$sort = null;
+
+			if (isset($data[$query['feed']['sort']])) {
+				$sort = $data[$query['feed']['sort']];
+			}
+
+			if (!$sort) {
+				if ($query['feed']['sort'] == 'date' && isset($data['date'])) {
+					$sort = strtotime($data['date']);
+				} else {
+					$sort = microtime();
 				}
+			}
 
-				if (!empty($source)) {
-					$data['source'] = (string)$source;
-				}
-				
-				$sort = null;
-
-				if (isset($data[$query['feed']['sort']])) {
-					$sort = $data[$query['feed']['sort']];
-				}
-
-				if (!$sort) {
-					if ($query['feed']['sort'] == 'date' && isset($data['date'])) {
-						$sort = strtotime($data['date']);
-					} else {
-						$sort = microtime();
-					}
-				}
-
+			if (!empty($data)) {
 				$clean[$sort] = $data;
 			}
 		}
-		
+
 		return $clean;
 	}
 
@@ -335,7 +342,7 @@ class FeedSource extends DataSource {
 		if (empty($feed)) {
 			return $feed;
 		}
-		
+
 		if (!is_numeric($count)) {
 			$count = 20;
 		}
