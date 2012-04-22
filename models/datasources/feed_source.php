@@ -5,6 +5,7 @@
  * A datasource that can read and parse web feeds. Can aggregrate multiple feeds at once into a single result.
  * Supports RSS, RDF and Atom feed types.
  *
+ * @version		2.2.3
  * @author      Miles Johnson - http://milesj.me
  * @copyright   Copyright 2006-2011, Miles Johnson, Inc.
  * @license     http://opensource.org/licenses/mit-license.php - Licensed under The MIT License
@@ -15,14 +16,6 @@ App::import('Core', array('HttpSocket', 'Folder'));
 App::import('Vendor', 'Feeds.TypeConverter', array('file' => 'TypeConverter.php'));
 
 class FeedSource extends DataSource {
-
-	/**
-	 * Current version.
-	 *
-	 * @access public
-	 * @var string
-	 */
-	public $version = '2.2.2';
 
 	/**
 	 * The processed feeds in array format.
