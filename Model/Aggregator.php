@@ -1,7 +1,7 @@
 <?php
 /**
  * Aggregator Model
- * 
+ *
  * A model that connects to the feed datasource and defines a custom find() function specific to aggregation.
  *
  * @author      Miles Johnson - http://milesj.me
@@ -54,18 +54,29 @@ class Aggregator extends Model {
 
 		return parent::find($type, $options);
 	}
-	
-	public function afterFind($results = array(), $primary) {
+
+	/**
+	 * Format the date a certain way.
+	 *
+	 * @access public
+	 * @param array $results
+	 * @param boolean $primary
+	 * @return array
+	 */
+	public function afterFind($results = array(), $primary = false) {
 		$rfc822 = 'd M Y H:i:s T';
+
 		if (!empty($results)) {
 			foreach ($results as &$result) {
-				if ($time = DateTime::createFromFormat($rfc822, $result['date'].'C')) {
-					$result['date'] = $time->format('Y-m-d H:i:s');
+				if (isset($result['date'])) {
+					if ($time = DateTime::createFromFormat($rfc822, $result['date'] . 'C')) {
+						$result['date'] = $time->format('Y-m-d H:i:s');
+					}
 				}
 			}
 		}
+
 		return $results;
 	}
-	
 
 }
