@@ -1,4 +1,4 @@
-# Feeds v3.0 #
+# Feeds v3.0.1 #
 
 Feeds is a CakePHP plugin that provides the functionality to parse external RSS feeds into your application through the model layer.
 
